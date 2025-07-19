@@ -1,4 +1,4 @@
 # pnpm-workspace.yaml
 packages:
-  - "frontend/**"
+  - "frontend"
   - "backend"

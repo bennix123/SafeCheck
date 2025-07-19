@@ -1,8 +1,0 @@
-To initialize the project
-
-1.pnpm install 
-#purpose is to install all dependencies in backend and frontend
-
-
-2.pnpm start
-#purpose is to run the project on dev environment
