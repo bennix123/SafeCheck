@@ -24,6 +24,10 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/fastapidb
+      SMTP_SERVER: smtp.gmail.com # Default to Gmail SMTP server
+      SMTP_PORT: 587 # Default to 587 for TLS
+      SMTP_USERNAME: abhishekkumar.11801521@gmail.com 
+      SMTP_PASSWORD: yctx ndpw fkro texk 
 
   frontend:
       build:

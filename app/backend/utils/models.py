@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-DATABASE_URL = os.getenv("DATABASE_URLl")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 try:
     engine = create_engine(DATABASE_URL)
