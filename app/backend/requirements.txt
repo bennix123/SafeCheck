@@ -7,4 +7,6 @@ cachetools
 python-dotenv
 email-validator
 pydantic
+jwt
+pyjwt==2.8.0
 

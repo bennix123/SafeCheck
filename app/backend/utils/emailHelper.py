@@ -23,8 +23,8 @@ class EmailHelper:
         self.username = os.getenv("SMTP_USERNAME")
         self.password = os.getenv("SMTP_PASSWORD")
         
-        # Cache with 4 minute TTL (time-to-live)
-        self.otp_cache = TTLCache(maxsize=1000, ttl=240)  # 240 seconds = 4 minutes
+        # Cache with 5 minute TTL (time-to-live)
+        self.otp_cache = TTLCache(maxsize=1000, ttl=300)    # 5 minutes
         
         # Email template
         self.email_template = """
@@ -32,7 +32,7 @@ class EmailHelper:
             <body>
                 <h2>Your One-Time Password (OTP)</h2>
                 <p>Your verification code is: <strong>{otp}</strong></p>
-                <p>This code will expire in 4 minutes.</p>
+                <p>This code will expire in 5 minutes.</p>
             </body>
         </html>
         """
@@ -52,6 +52,9 @@ class EmailHelper:
             bool: True if email was sent successfully, False otherwise
         """
         try:
+            logger.info(f"Request to send OTPsssssssssss: {recipient_email}") 
+            logger.info(f"self.username: {self.username}") 
+            logger.info(f"self.SMTP_PASSWORD: {self.password}")
             # Generate OTP
             otp = self._generate_otp()
             

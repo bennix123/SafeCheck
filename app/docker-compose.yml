@@ -27,7 +27,7 @@ services:
       SMTP_SERVER: smtp.gmail.com # Default to Gmail SMTP server
       SMTP_PORT: 587 # Default to 587 for TLS
       SMTP_USERNAME: abhishekkumar.11801521@gmail.com 
-      SMTP_PASSWORD: yctx ndpw fkro texk 
+      SMTP_PASSWORD: wfjf bcbv quuz pxao 
 
   frontend:
       build:

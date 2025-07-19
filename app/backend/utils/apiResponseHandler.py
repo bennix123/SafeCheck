@@ -23,7 +23,6 @@ class APIResponseHandler:
         data: Any = None,
         message: str = "Operation successful",
         status_code: int = status.HTTP_200_OK,
-        meta: Optional[Dict] = None
     ) -> JSONResponse:
         response = {
             "success": True,
@@ -31,9 +30,6 @@ class APIResponseHandler:
             "data": data,
             "timestamp": datetime.utcnow().isoformat()
         }
-        
-        if meta:
-            response["meta"] = meta
             
         return JSONResponse(
             content=response,

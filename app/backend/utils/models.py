@@ -93,6 +93,7 @@ class UserHistory(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"))
     age = Column(Integer, nullable=False)
     occupation = Column(String(255), nullable=False)
+    no_of_dependent=Column(Integer, nullable=False)
     risk_capacity = Column(SQLEnum(RiskCapacity), nullable=False)
     created_ts = Column(DateTime, server_default=func.now())
     modified_ts = Column(DateTime, server_default=func.now(), onupdate=func.now())

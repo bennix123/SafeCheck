@@ -43,7 +43,7 @@ export default function SignupPage() {
       toast.success("Account created successfully! Please login.");
       console.log("=================resposne=====",);
     } else {
-      toast.error("Email already exists. Please use a different email.");
+      toast.error(response?.message);
     }
   };
 
