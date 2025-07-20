@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Mail, Lock, ArrowRight, Shield } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const { login, verifyOtp, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log("Current step:", step);
+    console.log("Current email:", email);
+  }, [step, email]);
+
+  // Manual OTP verification trigger
+  const showOtpSection = () => {
+    setStep('otp');
+    setEmail('demo@example.com');
+    toast.info('Showing OTP verification section');
+  };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,12 +38,18 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await login(email);
-    if (success) {
-      setStep('otp');
-      toast.success('OTP sent to your email address');
-    } else {
-      toast.error('Email not found. Please sign up first.');
+    try {
+      const { success, pendingEmail } = await login(email);
+      console.log("Login response:", { success, pendingEmail });
+
+      if (success) {
+        setStep('otp');
+        setEmail(pendingEmail || email);
+        toast.success('OTP sent to your email address');
+      }
+    } catch (error) {
+      toast.error('Failed to send OTP');
+      console.error("Login error:", error);
     }
   };
 
@@ -41,9 +61,10 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await verifyOtp(otp);
-    if (success) {
+    const response = await verifyOtp(otp);
+    if (response?.success === true) {
       toast.success('Login successful!');
+      router.push('/');
     } else {
       toast.error('Invalid OTP. Please try again.');
     }
@@ -53,12 +74,22 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 relative">
           <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">SafeCheck</h1>
           <p className="text-gray-600">Secure access to your financial planning</p>
+          
+          {/* Manual OTP trigger button (visible in development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={showOtpSection}
+              className="absolute right-0 top-0 text-xs text-gray-500 underline"
+            >
+              [DEV] Show OTP
+            </button>
+          )}
         </div>
 
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
@@ -156,7 +187,7 @@ export default function LoginPage() {
                     onClick={() => setStep('email')}
                     disabled={isLoading}
                   >
-              \      Back to Email
+                    Back to Email
                   </Button>
                 </div>
               </form>

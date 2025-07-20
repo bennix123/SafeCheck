@@ -1,4 +1,3 @@
-# emailHelper.py
 import os
 import smtplib
 from email.mime.text import MIMEText
@@ -102,18 +101,19 @@ class EmailHelper:
             cached_data = self.otp_cache.get(email)
             
             if not cached_data:
-                logger.warning(f"No OTP found for {email}")
+                logger.warning(f"No OTP found in cache for {email}")
                 return False
                 
-            if cached_data['otp'] == user_provided_otp:
-                # Remove OTP from cache after successful verification
+            logger.info(f"Found cached OTP for {email}. Generated at: {cached_data['generated_at']}")
+            logger.info(f"Type check - cached OTP: {type(cached_data['otp'])}, user OTP: {type(user_provided_otp)}")
+            if int(cached_data['otp']) == user_provided_otp:
                 self.otp_cache.pop(email, None)
-                logger.info(f"OTP verified for {email}")
+                logger.info(f"OTP verified successfully for {email}")
                 return True
                 
-            logger.warning(f"Invalid OTP for {email}")
+            logger.warning(f"Invalid OTP for {email}. Expected: {cached_data['otp']}, Received: {user_provided_otp}")
             return False
             
         except Exception as e:
-            logger.error(f"Error verifying OTP for {email}: {e}")
+            logger.error(f"Error verifying OTP for {email}: {str(e)}", exc_info=True)
             return False

@@ -132,7 +132,7 @@ class UserCreateRequest(BaseModel):
             raise ValueError('User must be at least 18 years old')
         
         return v
-
+email_helper = EmailHelper()
 class SendOTPRequest(BaseModel):
     email: str
 @app.post("/send-otp/", status_code=status.HTTP_200_OK)
@@ -154,7 +154,6 @@ async def send_otp(request:SendOTPRequest, db: Session = Depends(get_db)):
         )
 
         # Send OTP
-        email_helper = EmailHelper()
         success = email_helper.send_otp(request.email)
         if not success:
             return APIResponseHandler.error_response(
@@ -164,7 +163,11 @@ async def send_otp(request:SendOTPRequest, db: Session = Depends(get_db)):
              )
 
         return APIResponseHandler.success_response(
-            data=None,
+            data={
+                "email": request.email,
+                "user_id": user.id,
+                "name":user.name
+            },
             message="OTP Sent Successfully"
         )
 
@@ -198,7 +201,6 @@ async def verify_otp(request:VerifyOTPRequest, db: Session = Depends(get_db)):
             )
         
 
-        email_helper = EmailHelper()
         is_valid = email_helper.verify_otp(request.email, request.otp)
         if not is_valid:
             return APIResponseHandler.error_response(
@@ -207,17 +209,18 @@ async def verify_otp(request:VerifyOTPRequest, db: Session = Depends(get_db)):
                 error_code="Invalid OTP or OTP expired"
             )
 
-        token_data = {
-            "user_id": user.id,
-            "email": user.email
-        }
-        token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        # token_data = {
+        #     "user_id": user.id,
+        #     "email": user.email
+        # }
+        # token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
         return APIResponseHandler.success_response(
             data={
-                "access_token": token,
+                # "access_token": token,
                 "user_id": user.id,
-                "email": user.email
+                "email": user.email,
+                "name":user.name
             },
             message="OTP verified successfully"
         )
@@ -304,14 +307,13 @@ class RiskCapacity(str, Enum):
 class UserHistoryCreate(BaseModel):
     user_id: int
     age: int
-    occupation: str
+    annual_income: int
     no_of_dependent: int
     risk_capacity: RiskCapacity
 
 @app.post("/save-user-history/", status_code=status.HTTP_201_CREATED)
 async def save_user_history(
-    history_data: UserHistoryCreate, 
-    user_id: int = Depends(get_current_user_id),
+    history_data: UserHistoryCreate,
     db: Session = Depends(get_db)
 ):
     """
@@ -320,7 +322,7 @@ async def save_user_history(
     Example Request:
     {
         "age": 23,
-        "occupation": "Software Engineer",
+        "annual_income": 123456,
         "no_of_dependent": 2,
         "risk_capacity": "medium"
     }
@@ -338,9 +340,9 @@ async def save_user_history(
         
         # Create history record
         history_record = {
-            "user_id": user_id,
+            "user_id": history_data.user_id,
             "age": history_data.age,
-            "occupation": history_data.occupation,
+            "annual_income": history_data.annual_income,
             "no_of_dependent": history_data.no_of_dependent,
             "risk_capacity": history_data.risk_capacity
         }

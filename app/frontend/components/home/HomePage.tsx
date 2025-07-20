@@ -27,19 +27,59 @@ export default function HomePage() {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.age || !formData.income || !formData.dependents || !formData.riskTolerance) {
-      toast.error('Please fill in all fields');
-      return;
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!formData.age || !formData.income || !formData.dependents || !formData.riskTolerance) {
+    toast.error('Please fill in all fields');
+    return;
+  }
+
+  try {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      throw new Error('User not found in localStorage');
     }
 
-    // Save the financial data
-    localStorage.setItem(`financial_data_${user?.id}`, JSON.stringify(formData));
+    const user = JSON.parse(userData);
+    const userId = user.user_id;
+
+    // Prepare the API request data
+    const requestData = {
+      user_id: userId,
+      age: parseInt(formData.age),
+      annual_income: parseInt(formData.income),
+      no_of_dependent: parseInt(formData.dependents),
+      risk_capacity: formData.riskTolerance.toLowerCase()
+    };
+
+    console.log("Submitting data:", requestData);
+
+    // Call the API
+    const response = await fetch('http://localhost:8000/save-user-history/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to save data');
+    }
+
+    // Save to localStorage as fallback
+    localStorage.setItem(`financial_data_${userId}`, JSON.stringify(formData));
     setIsSubmitted(true);
     toast.success('Financial information saved successfully!');
-  };
+    
+  } catch (error) {
+    console.error('Error saving data:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to save financial information');
+  }
+};
 
   const handleInputChange = (field: keyof FinancialData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
