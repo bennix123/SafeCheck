@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { LogOut, DollarSign, Users, TrendingUp, Calendar, User, CheckCircle } from 'lucide-react';
+import { authService } from '@/lib/authService';
 
 interface FinancialData {
   age: string;
@@ -79,17 +80,8 @@ export default function HomePage() {
       console.log("Submitting data:", requestData);
 
       // Call the API
-      const response = await fetch('http://localhost:8000/save-user-history/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
+      const result = await authService.saveUserHistory(requestData);
+      if (!result.success) {
         throw new Error(result.message || 'Failed to save data');
       }
 
@@ -160,7 +152,7 @@ export default function HomePage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500">Annual Income</p>
-                  <p className="font-semibold">₹{parseInt(formData.income).toLocaleString()}</p>
+                  <p className="font-semibold"> ₹{Number(formData.income).toLocaleString('en-IN')}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-500">Dependents</p>

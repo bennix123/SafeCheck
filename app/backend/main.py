@@ -1,31 +1,39 @@
-from typing import Optional
-from utils.apiResponseHandler import APIResponseHandler
-from utils.dbHelper import DBHelper
+# Standard library imports
+from datetime import datetime
+from enum import Enum
+import logging
+import re
+from typing import Optional, List
+
+# Third-party imports
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import FastAPI, Depends,HTTPException,status,Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from utils.emailHelper import EmailHelper
-from sqlalchemy import inspect, text
-from enum import Enum
-from sqlalchemy.orm import Session
-from datetime import datetime
-from utils.models import init_db,engine, get_db,User,UserHistory,LICPlan
-from utils.seeds_plans import init_seed_data
 from pydantic import BaseModel, validator, EmailStr
+from sqlalchemy import inspect
+from sqlalchemy.orm import Session
 import jwt
-import logging
-from typing import List
-import re
+
+# Local application imports
+from utils.apiResponseHandler import APIResponseHandler
+from utils.dbHelper import DBHelper
+from utils.emailHelper import EmailHelper
+from utils.models import init_db, engine, get_db, User, UserHistory, LICPlan
+from utils.seeds_plans import init_seed_data
+
+# Initialize logging
 logger = logging.getLogger(__name__)
 
+# Initialize FastAPI app
 app = FastAPI()
 
+
+#on app startup we created init_seed_data function to create all the table and seeds 10 lic plans into the licplans table
 @app.on_event("startup")
 async def startup():
     init_seed_data() 
-
 
 origins = [
     "http://localhost:3000",#allowing the frontend to access the backend
@@ -44,6 +52,8 @@ security = HTTPBearer()
 JWT_SECRET = "safeCheck"
 JWT_ALGORITHM = "HS256"
 
+#Helper function to get user_if from JWT token
+#this is not used for now .It can be used in production 
 async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Dependency to get current user ID from JWT token"""
     try:
@@ -85,6 +95,7 @@ async def validation_exception_handler(request, exc):
 
 
 
+#api endpoint to fetch all the existing tables in db
 @app.get("/tables")
 async def get_all_tables(db: Session = Depends(get_db)):
     try:
@@ -96,43 +107,24 @@ async def get_all_tables(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error fetching tables: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
+
+
+#api end point to check weather backend server is running or not  
 @app.get("/heath_check")
 async def root():
     return {"message": "✅ Server  running!"}
 
-# Enhanced Pydantic Model with Complete Validation
-class UserCreateRequest(BaseModel):
-    name: str
-    email: EmailStr
-    dateOfBirth: str  # Expects YYYY-MM-DD format
 
-    @validator('name')
-    def validate_name(cls, v):
-        v = v.strip()
-        if len(v) < 2:
-            raise ValueError('Name must be at least 2 characters')
-        if not re.match(r'^[a-zA-Z\s\-]+$', v):
-            raise ValueError('Name can only contain letters, spaces and hyphens')
-        return v
-
-    @validator('dateOfBirth')
-    def validate_date_of_birth(cls, v):
-        try:
-            birth_date = datetime.strptime(v, '%Y-%m-%d').date()
-        except ValueError:
-            raise ValueError('Invalid date format. Use YYYY-MM-DD')
-        
-        today = datetime.now().date()
-        if birth_date > today:
-            raise ValueError('Birth date cannot be in the future')
-        
-        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        if age < 18:
-            raise ValueError('User must be at least 18 years old')
-        
-        return v
+#email Helper object to send otp to user registered email id and verify
 email_helper = EmailHelper()
+
+
+
+
+
+#api endpoint to send otp to user registered email
 class SendOTPRequest(BaseModel):
     email: str
 @app.post("/send-otp/", status_code=status.HTTP_200_OK)
@@ -180,6 +172,12 @@ async def send_otp(request:SendOTPRequest, db: Session = Depends(get_db)):
             error_code=str(e)
              )
 
+
+
+
+
+
+#api endpoint to verify-otp send to the user email-id
 class VerifyOTPRequest(BaseModel):
     email: str
     otp: int
@@ -235,7 +233,42 @@ async def verify_otp(request:VerifyOTPRequest, db: Session = Depends(get_db)):
             error_code=str(e)
              )
 
-# API Endpoint
+
+
+
+
+#api endpoint to signup into SafeCheck
+# Enhanced Pydantic Model with Complete Validation
+class UserCreateRequest(BaseModel):
+    name: str
+    email: EmailStr
+    dateOfBirth: str  # Expects YYYY-MM-DD format
+
+    @validator('name')
+    def validate_name(cls, v):
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError('Name must be at least 2 characters')
+        if not re.match(r'^[a-zA-Z\s\-]+$', v):
+            raise ValueError('Name can only contain letters, spaces and hyphens')
+        return v
+
+    @validator('dateOfBirth')
+    def validate_date_of_birth(cls, v):
+        try:
+            birth_date = datetime.strptime(v, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValueError('Invalid date format. Use YYYY-MM-DD')
+        
+        today = datetime.now().date()
+        if birth_date > today:
+            raise ValueError('Birth date cannot be in the future')
+        
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        if age < 18:
+            raise ValueError('User must be at least 18 years old')
+        
+        return v
 @app.post("/signup/", status_code=status.HTTP_201_CREATED)
 def create_user(user_request: UserCreateRequest, db: Session = Depends(get_db)):
     """
@@ -298,6 +331,9 @@ def create_user(user_request: UserCreateRequest, db: Session = Depends(get_db)):
         )
     
 
+
+
+#api endpoint to save-user-history and recommend plans
 
 class RiskCapacity(str, Enum):
     low = "low"

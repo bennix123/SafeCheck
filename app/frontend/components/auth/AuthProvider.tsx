@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { authService } from "@/lib/authService";
 
 interface User {
   id: string;
@@ -50,18 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   setError(null);
 
   try {
-    const response = await fetch("http://localhost:8000/send-otp/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-
-    const result = await response.json();
+    const result =await authService.sendOtp(email);
     console.log(result,"---result")
-
-    if (result.success===false) {
+    if (!result.success) {
       console.log("i am here")
       const errorMessage = result.message || "Failed to send OTP";
       setError(errorMessage);
@@ -88,23 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }> => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/verify-otp/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: pendingEmail,
-          otp,
-        }),
-      });
+      const result = await authService.verifyOtp(pendingEmail,otp)
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
+      if (!result.success) {
         throw new Error(result.message || "Invalid OTP");
       }
-
       // Only set user after successful verification
       setUser(result.data);
       localStorage.setItem("user", JSON.stringify(result.data));
@@ -119,30 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   };
-
-  // const verifyOtp = async (otp: string): Promise<boolean> => {
-  //   setIsLoading(true);
-  //   // Simulate API call
-  //   await new Promise(resolve => setTimeout(resolve, 1000));
-
-  //   // Simple OTP verification (in real app, this would be server-side)
-  //   if (otp === '123456') {
-  //     const users = JSON.parse(localStorage.getItem('users') || '[]');
-  //     const userData = users.find((u: User) => u.email === pendingEmail);
-
-  //     if (userData) {
-  //       setUser(userData);
-  //       localStorage.setItem('user', JSON.stringify(userData));
-  //       setPendingEmail('');
-  //       setIsLoading(false);
-  //       return true;
-  //     }
-  //   }
-
-  //   setIsLoading(false);
-  //   return false;
-  // };
-
   const signup = async (data: {
     name: string;
     email: string;
@@ -156,25 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-      console.log("Signup Response:", result);
-      console.log("Signup Data:", result.success);
-
+      const result = await authService.signup(data);
       if (!result.success) {
         console.error("Signup failed:", result.message);
         throw new Error(result.message || "Signup failed");
       }
-
-      // setUser(result.data);
-      // localStorage.setItem("user", JSON.stringify(result.data));
       return { success: true, user: result.data };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Signup failed";

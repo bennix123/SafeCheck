@@ -29,21 +29,58 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.dateOfBirth) {
+    const { name, email, dateOfBirth } = formData;
+
+    // Trim values to avoid whitespace-only inputs
+    if (!name.trim() || !email.trim() || !dateOfBirth.trim()) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    // console.log('Form Data:', formData);
+    // Name validation
+    if (name.trim().length < 2) {
+      toast.error("Name must be at least 2 characters");
+      return;
+    }
 
-    const response = await signup(formData);
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
 
-    // console.log('Signup Response:', response);
-    if (response?.success === true) {
-      toast.success("Account created successfully! Please login.");
-      console.log("=================resposne=====",);
-    } else {
-      toast.error(response?.message);
+    // Checking if the age of the user while registering into the plaform is 18+ or not
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    const ageDiff = today.getFullYear() - dob.getFullYear();
+    const hasBirthdayPassed =
+      today.getMonth() > dob.getMonth() ||
+      (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
+    const age = hasBirthdayPassed ? ageDiff : ageDiff - 1;
+
+    if (isNaN(dob.getTime()) || age < 18) {
+      toast.error("You must be at least 18 years old to sign up");
+      return;
+    }
+
+    try {
+      const response = await signup(formData);
+      if (response?.success === true) {
+        toast.success("Account created successfully! Please login.");
+      } else {
+        toast.error(response?.message || "Signup failed");
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+      console.error("Signup error:", error);
+    } finally {
+      // Reset the form in both success and failure
+      setFormData({
+        name: "",
+        email: "",
+        dateOfBirth: "",
+      });
     }
   };
 

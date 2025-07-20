@@ -24,9 +24,8 @@ export default function LoginPage() {
       return;
     }
 
-    // try {
+    try {
       const {success,pendingEmail,message} = await login(email);
-      // console.log("i am inside login page--",response)
       if (success) {
         console.log(" i am here 4");
         const emailToUse = pendingEmail || email;
@@ -36,10 +35,10 @@ export default function LoginPage() {
       else{
        toast.error(message); 
       }
-    // } catch (error) {
-    //     console.log("i am here 22")
-    //   toast.error('Failed to send OTP');
-    // }
+    } catch (error) {
+        console.log("i am here 22")
+      toast.error('Failed to send OTP');
+    }
   };
 
   return (
