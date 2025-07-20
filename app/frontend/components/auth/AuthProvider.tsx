@@ -59,15 +59,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const result = await response.json();
+    console.log(result,"---result")
 
-    if (!response.ok || !result.success) {
+    if (result.success===false) {
+      console.log("i am here")
       const errorMessage = result.message || "Failed to send OTP";
       setError(errorMessage);
       return { success: false, message: errorMessage };
     }
-
+   const message = "success";
     setPendingEmail(email);
-    return { success: true, pendingEmail: email };
+    return { success: true, pendingEmail: email,message };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Login failed";
     setError(message);
@@ -171,8 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(result.message || "Signup failed");
       }
 
-      setUser(result.data);
-      localStorage.setItem("user", JSON.stringify(result.data));
+      // setUser(result.data);
+      // localStorage.setItem("user", JSON.stringify(result.data));
       return { success: true, user: result.data };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Signup failed";

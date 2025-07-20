@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/components/auth/AuthProvider';
 import LoginPage from '@/components/auth/LoginPage';
+import VerifyPage from  '@/components/auth/verify_otp';
 import HomePage from '@/components/home/HomePage';
 
 export default function Page() {
