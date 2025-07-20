@@ -1,15 +1,52 @@
-To initialize the project
-
-1.Using Turborepo method
-//Help us to run the project locally
-1.1.pnpm install 
-#purpose is to install all dependencies in backend and frontend
+# Insurance Plan Recommendation System
 
 
-1.2.pnpm start
-#purpose is to run the project on dev environment
+A full-stack application that recommends insurance plans based on user's financial profile, built with React (Frontend) and Python (Backend), containerized with Docker.
 
-2.Setup the project with help of docker
+## Features
 
-Just run docker-compose up --build
+- User financial profile assessment
+- Personalized insurance plan recommendations
+- Responsive UI with modern design
+- REST API backend
+- Dockerized development environment
+
+## Prerequisites
+
+- Docker (v20.10+)
+- Docker Compose (v2.0+)
+
+## Project Structure
+
+app/
+├── backend/ # Python FastAPI backend
+│ ├── Dockerfile # Backend Docker configuration
+│ ├── requirements.txt # Python dependencies
+│ └── ... # Other backend files
+├── frontend/ # React frontend
+│ ├── Dockerfile # Frontend Docker configuration
+│ ├── package.json # Frontend dependencies
+│ └── ... # Other frontend files
+├── docker-compose.yml # Orchestration configuration
+└── README.md # This file
+
+## Getting Started
+
+### Development with Docker (Recommended)
+
+**Clone the repository**
+   git clone https://github.com/bennix123/SafeCheck.git
+   cd app
+
+
+**Build and start containers**
+
+docker-compose up --build
+
+
+**Access the applications**
+
+Frontend: http://localhost:3000
+
+Backend API: http://localhost:8000
 
