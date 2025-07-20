@@ -26,7 +26,7 @@ export default function LoginPage() {
   // Manual OTP verification trigger
   const showOtpSection = () => {
     setStep('otp');
-    setEmail('demo@example.com');
+    // setEmail('demo@example.com');
     toast.info('Showing OTP verification section');
   };
 
@@ -204,9 +204,6 @@ export default function LoginPage() {
 
             {step === 'otp' && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                <p className="text-xs text-blue-700">
-                  Demo: Use <span className="font-mono font-bold">123456</span> as OTP
-                </p>
               </div>
             )}
           </CardContent>

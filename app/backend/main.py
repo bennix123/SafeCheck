@@ -317,10 +317,11 @@ async def save_user_history(
     db: Session = Depends(get_db)
 ):
     """
-    Save user history data to database
+    Save user history data to database and recommend plans
     
     Example Request:
     {
+        "user_id": 1,
         "age": 23,
         "annual_income": 123456,
         "no_of_dependent": 2,
@@ -330,7 +331,7 @@ async def save_user_history(
     try:
         db_helper = DBHelper(db)
         
-        # Validate age range (though SQLAlchemy also checks this)
+        # Validate age range
         if not 18 <= history_data.age <= 100:
             return APIResponseHandler.error_response(
                 message="Age must be between 18-100",
@@ -347,89 +348,36 @@ async def save_user_history(
             "risk_capacity": history_data.risk_capacity
         }
         
+        # Save user history
         created_history = db_helper.create(UserHistory, history_record)
         
-        return APIResponseHandler.success_response(
-            data={
-                "id": created_history.id,
-                "created_at": created_history.created_ts.isoformat()
-            },
-            message="User history saved successfully"
-        )
-        
-    except ValueError as e:
-        return APIResponseHandler.error_response(
-            message=str(e),
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            error_code="validation_error"
-        )
-    except Exception as e:
-        logger.error(f"Error saving user history: {str(e)}")
-        return APIResponseHandler.error_response(
-            message="Failed to save user history",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_code="database_error"
-        )
-    
-
-
-
-class PlanRecommendationRequest(BaseModel):
-    age: int
-    dependents: int
-    risk_tolerance: RiskCapacity
-
-class PlanRecommendationResponse(BaseModel):
-    plan_id: int
-    plan_name: str
-    plan_type: str
-    sum_assured_range: str
-    description: str
-    match_score: float
-
-@app.post("/recommend-plans/", response_model=List[PlanRecommendationResponse])
-async def recommend_plans(
-    request: PlanRecommendationRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Recommend LIC plans based on user's age, dependents and risk tolerance
-    
-    Example Request:
-    {
-        "age": 30,
-        "dependents": 2,
-        "risk_tolerance": "medium"
-    }
-    """
-    try:
-        # Validating age
-        if not 18 <= request.age <= 100:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Age must be between 18-100"
-            )
-
-        # Query suitable plans
+        # Query suitable plans based on user's profile
         plans = db.query(LICPlan).filter(
-            LICPlan.min_age <= request.age,
-            LICPlan.max_age >= request.age,
-            LICPlan.risk_capacity.any(request.risk_tolerance.value)
+            LICPlan.min_age <= history_data.age,
+            LICPlan.max_age >= history_data.age,
+            LICPlan.risk_capacity.any(history_data.risk_capacity)
         ).all()
 
         if not plans:
             return APIResponseHandler.error_response(
-            message="No matching plans found",
-            status_code=status.HTTP_404_NOT_FOUND,
-            error_code="No matching plans found"
-        )
+                message="No matching plans found",
+                status_code=status.HTTP_404_NOT_FOUND,
+                error_code="no_matching_plans"
+            )
 
+        # Calculate match scores for each plan
         recommended_plans = []
         for plan in plans:
-            age_match = 1 - abs((request.age - (plan.min_age + plan.max_age)/2)/100)
-            risk_match = 1.0 if request.risk_tolerance.value in plan.risk_capacity else 0.5
-            dependents_factor = min(request.dependents/5, 1)
+            # Calculate age match score
+            age_match = 1 - abs((history_data.age - (plan.min_age + plan.max_age)/2)/100)
             
+            # Calculate risk match score
+            risk_match = 1.0 if history_data.risk_capacity in plan.risk_capacity else 0.5
+            
+            # Calculate dependents factor
+            dependents_factor = min(history_data.no_of_dependent/5, 1)
+            
+            # Calculate overall score
             score = (age_match * 0.4) + (risk_match * 0.4) + (dependents_factor * 0.2)
             
             recommended_plans.append({
@@ -441,19 +389,28 @@ async def recommend_plans(
                 "match_score": round(score, 2)
             })
 
+        # Sort plans by match score (highest first)
         recommended_plans.sort(key=lambda x: x["match_score"], reverse=True)
-
+        
         return APIResponseHandler.success_response(
             data={
-               recommended_plans
+                "history": {
+                    "id": created_history.id,
+                    "created_at": created_history.created_ts.isoformat()
+                },
+                "recommended_plans": recommended_plans
             },
-            message="Plans Recommended Successfully"
+            message="User history saved successfully with plan recommendations"
         )
-
-    except HTTPException:
-        raise
+        
+    except ValueError as e:
+        return APIResponseHandler.error_response(
+            message=str(e),
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            error_code="validation_error"
+        )
     except Exception as e:
-        logger.error(f"Plan recommendation error: {e}")
+        logger.error(f"Error saving user history: {str(e)}", exc_info=True)
         return APIResponseHandler.error_response(
             message="Failed to save user history",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
